@@ -1,0 +1,12 @@
+[package]
+name = "visitant"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+proc-macro2 = { version = "1.0.95", optional = true }
+syn = { version = "2.0.101", features = ["full"], optional = true }
+
+[features]
+default = ["syn"]
+syn = ["dep:syn", "dep:proc-macro2"]
