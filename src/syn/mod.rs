@@ -8,9 +8,9 @@ mod test {
 
     struct IdentCount(usize);
 
-    impl<'n> crate::syn::visit::Full<'n> for IdentCount {
-        fn visit_ident<'dv, D: ?Sized>(mut visitor: crate::Visitor<'dv, 'n, D, Self, Ident>, _node: &'n Ident)
-        where D: crate::Direct<'n,Self,Ident> {
+    impl crate::syn::visit::Full for IdentCount {
+        fn visit_ident<'dv, 'n, D: ?Sized>(mut visitor: crate::Visitor<'dv, 'n, D, Self, Ident>, _node: &'n Ident)
+        where D: crate::Direct<Self, Ident> {
             visitor.0 += 1;
             crate::Visitor::visit(visitor);
         }
@@ -43,28 +43,40 @@ mod test {
             #[custom_attr(these, are, actually, idents)]
         };
 
+        struct IdentList(Vec<Ident>);
+
+        impl crate::syn::visit::Full for IdentList {
+            fn visit_ident<'dv, 'n, D: ?Sized>(mut visitor: crate::Visitor<'dv, 'n, D, Self, Ident>, node: &'n Ident)
+            where D: crate::Direct<Self, Ident> {
+                visitor.0.push(node.clone());
+                crate::Visitor::visit(visitor);
+            }
+        }
+
         struct AttrIdentList;
 
-        impl<'n> crate::syn::direct::Full<'n> for AttrIdentList {
-            fn visit_meta<'dv, V: ?Sized>(mut director: crate::Director<'dv, Self, V>, node: &'n syn::Meta) 
-                where V: crate::syn::visit::Full<'n>
+        impl crate::syn::direct::Full for AttrIdentList {
+            fn visit_meta_list<'dv, V: ?Sized>(mut director: crate::Director<'dv, Self, V>, node: &syn::MetaList) 
+                where V: crate::syn::visit::Full
             {
-                if node.path().is_ident("custom_attr") {
-                    let meta_list = node.require_list().unwrap();
+                if node.path.is_ident("custom_attr") {
+                    crate::Director::direct(&mut director, &node.path);
+                    crate::Director::direct(&mut director, &node.delimiter);
+
                     for ident in 
-                        meta_list.parse_args_with(
+                        node.parse_args_with(
                             syn::punctuated::Punctuated::<Ident, syn::Token![,]>::parse_terminated
                         ).unwrap() 
                     {
                         crate::Director::direct(&mut director, &ident);
                     }
                 } else {
-                    super::direct::default::visit_meta(director, node);
+                    super::direct::default::visit_meta_list(director, node);
                 }
             }
         }
 
-        let mut visit = IdentCount(0);
+        let mut visit = IdentList(vec![]);
 
         crate::visit(
             &mut AttrIdentList,
@@ -72,6 +84,6 @@ mod test {
             &attr
         );
 
-        assert_eq!(visit.0, 5);
+        assert_eq!(visit.0, vec!["custom_attr", "these", "are", "actually", "idents"]);
     }
 }

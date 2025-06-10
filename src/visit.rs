@@ -9,30 +9,30 @@ impl<'dv, 'n, D: ?Sized, V: ?Sized, N: ?Sized> Visitor<'dv, 'n, D, V, N> {
     
     pub fn visit(this: Self) 
     where 
-        D: Direct<'n, V, N>,
+        D: Direct<V, N>,
     {
-        <D as Direct<'n, V, N>>::direct(Director::new(this.0), this.1)
+        <D as Direct<V, N>>::direct(Director::new(this.0), this.1)
     }
 }
 
-impl<'dv, 'n, D: ?Sized, V: ?Sized, N: ?Sized> std::ops::Deref for Visitor<'dv, 'n, D, V, N> {
+impl<D: ?Sized, V: ?Sized, N: ?Sized> std::ops::Deref for Visitor<'_, '_, D, V, N> {
     type Target = V;
 
     fn deref(&self) -> &Self::Target {
-        &self.0.visit
+        self.0.visit
     }
 }
 
-impl<'dv, 'n, D: ?Sized, V: ?Sized, N: ?Sized> std::ops::DerefMut for Visitor<'dv, 'n, D, V, N> {
+impl<D: ?Sized, V: ?Sized, N: ?Sized> std::ops::DerefMut for Visitor<'_, '_, D, V, N> {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0.visit
+        self.0.visit
     }
 }
 
-pub trait Visit<'n, N: ?Sized> {
-    fn visit<'dv, D: ?Sized>(visitor: Visitor<'dv, 'n, D, Self, N>, _node: &'n N) 
+pub trait Visit<N: ?Sized> {
+    fn visit<'n, D>(visitor: Visitor<'_, 'n, D, Self, N>, _node: &'n N) 
     where
-        D: Direct<'n, Self, N>,
+        D: Direct<Self, N> + ?Sized,
     {
         Visitor::visit(visitor);
     }

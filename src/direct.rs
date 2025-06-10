@@ -7,29 +7,29 @@ impl<'dv, D: ?Sized, V: ?Sized> Director<'dv, D, V> {
         Self(data)
     }
     
-    pub fn direct<'s, NN: ?Sized>(this: &mut Self, node: &'s NN)
+    pub fn direct<NN: ?Sized>(this: &mut Self, node: &NN)
     where
-        D: Direct<'s, V, NN>,
-        V: Visit<'s, NN>,
+        D: Direct<V, NN>,
+        V: Visit<NN>,
     {
-        <V as Visit<'s, NN>>::visit(Visitor::new(this.0.reborrow(), node), node)
+        <V as Visit<NN>>::visit(Visitor::new(this.0.reborrow(), node), node)
     }
 }
 
-impl<'dv, D: ?Sized, V: ?Sized> std::ops::Deref for Director<'dv, D, V> {
+impl<D: ?Sized, V: ?Sized> std::ops::Deref for Director<'_, D, V> {
     type Target = D;
 
     fn deref(&self) -> &Self::Target {
-        &self.0.direct
+        self.0.direct
     }
 }
 
-impl<'dv, D: ?Sized, V: ?Sized> std::ops::DerefMut for Director<'dv, D, V> {
+impl<D: ?Sized, V: ?Sized> std::ops::DerefMut for Director<'_, D, V> {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0.direct
+        self.0.direct
     }
 }
 
-pub trait Direct<'n, V: ?Sized, N: ?Sized> {
-    fn direct<'dv>(wrapper: Director<'dv, Self, V>, node: &'n N);
+pub trait Direct<V: ?Sized, N: ?Sized> {
+    fn direct(director: Director<'_, Self, V>, node: &N);
 }

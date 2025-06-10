@@ -1,10 +1,10 @@
 macro_rules! node_set {
     ($vis:vis trait $trait_ident:ident { $($fn_ident:ident : $ty:ty),* $(,)? }) => {
-        $vis trait $trait_ident<'n> {
+        $vis trait $trait_ident {
             $(
-                fn $fn_ident<'dv, D: ?Sized>(visitor: crate::Visitor<'dv, 'n, D, Self, $ty>, _node: &'n $ty) 
+                fn $fn_ident<'n, D>(visitor: crate::Visitor<'_, 'n, D, Self, $ty>, _node: &'n $ty) 
                 where
-                    D: crate::Direct<'n, Self, $ty>,
+                    D: crate::Direct<Self, $ty> + ?Sized,
                 {
                     crate::Visitor::visit(visitor);
                 }
@@ -12,10 +12,10 @@ macro_rules! node_set {
         }
 
         $(
-            impl<'n, T: Full<'n> + ?Sized> crate::Visit<'n, $ty> for T {
-                fn visit<'dv, D: ?Sized>(visitor: crate::Visitor<'dv, 'n, D, Self, $ty>, node: &'n $ty) 
+            impl<T: Full + ?Sized> crate::Visit<$ty> for T {
+                fn visit<'n, D>(visitor: crate::Visitor<'_, 'n, D, Self, $ty>, node: &'n $ty) 
                 where
-                    D: crate::Direct<'n, Self, $ty>,
+                    D: crate::Direct<Self, $ty> + ?Sized,
                 {
                     Self::$fn_ident(visitor, node);
                 }

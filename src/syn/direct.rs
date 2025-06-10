@@ -1,15 +1,15 @@
 pub struct FullDefault;
 
-impl<'n> Full<'n> for FullDefault { }
+impl Full for FullDefault { }
 
 macro_rules! node_set {
     ($vis:vis trait $trait_ident:ident { $($fn_ident:ident($director_ident:ident, $node_ident:ident) -> $ty:ty $fn_impl:block)* }) => {
         #[allow(unused_mut)]
-        $vis trait $trait_ident<'n> {
+        $vis trait $trait_ident {
             $(
-                fn $fn_ident<'dv, V: ?Sized>(mut $director_ident: crate::Director<'dv, Self, V>, $node_ident: &'n $ty) 
+                fn $fn_ident<V>(mut $director_ident: crate::Director<'_, Self, V>, $node_ident: &$ty) 
                 where
-                    V: crate::syn::visit::Full<'n>,
+                    V: crate::syn::visit::Full + ?Sized,
                 {
                     default::$fn_ident($director_ident, $node_ident);
                 }
@@ -17,11 +17,12 @@ macro_rules! node_set {
         }
 
         $(
-            impl<'n, V: ?Sized, T: Full<'n> + ?Sized> crate::Direct<'n, V, $ty> for T 
+            impl<'n, V, T> crate::Direct<V, $ty> for T 
             where
-                V: crate::syn::visit::Full<'n>,
+                V: crate::syn::visit::Full + ?Sized,
+                T: Full + ?Sized,
             {
-                fn direct<'dv>(director: crate::Director<'dv, Self, V>, node: &'n $ty) {
+                fn direct(director: crate::Director<'_, Self, V>, node: &$ty) {
                     Self::$fn_ident(director, node);
                 }
             }
@@ -29,10 +30,10 @@ macro_rules! node_set {
 
         pub mod default {
             $(
-                pub fn $fn_ident<'dv, 'n, D: ?Sized, V: ?Sized>(mut $director_ident: crate::Director<'dv, D, V>, $node_ident: &'n $ty) 
+                pub fn $fn_ident<D, V>(mut $director_ident: crate::Director<'_, D, V>, $node_ident: &$ty) 
                 where
-                    D: super::$trait_ident<'n>,
-                    V: crate::syn::visit::Full<'n>,
+                    D: super::$trait_ident + ?Sized,
+                    V: crate::syn::visit::Full + ?Sized,
                 {
                     $fn_impl
                 }
@@ -818,11 +819,8 @@ node_set! {
             skip!(node.colon_token);
             crate::Director::direct(&mut director, &node.ty);
         }
-        visit_field_mutability(_director, node) -> syn::FieldMutability {
-            match node {
-                syn::FieldMutability::None => {}
-                _ => { }
-            }
+        visit_field_mutability(_director, _node) -> syn::FieldMutability {
+            
         }
         visit_field_pat(director, node) -> syn::FieldPat {
             for it in &node.attrs {
@@ -1055,10 +1053,8 @@ node_set! {
             crate::Director::direct(&mut director, &node.ty);
             skip!(node.semi_token);
         }
-        visit_impl_restriction(_director, node) -> syn::ImplRestriction {
-            match *node {
-                _ => { }
-            }
+        visit_impl_restriction(_director, _node) -> syn::ImplRestriction {
+            
         }
         visit_index(_director, node) -> syn::Index {
             skip!(node.index);
