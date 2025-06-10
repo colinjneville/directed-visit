@@ -1,10 +1,13 @@
+/// A [crate::Direct] implementation equivalent to [syn]::visit's ast traversal.
+#[derive(Debug)]
 pub struct FullDefault;
 
 impl Full for FullDefault { }
 
 macro_rules! node_set {
-    ($vis:vis trait $trait_ident:ident { $($fn_ident:ident($director_ident:ident, $node_ident:ident) -> $ty:ty $fn_impl:block)* }) => {
+    ($(#[$attr:meta])* $vis:vis trait $trait_ident:ident { $($fn_ident:ident($director_ident:ident, $node_ident:ident) -> $ty:ty $fn_impl:block)* }) => {
         #[allow(unused_mut)]
+        $(#[$attr])*
         $vis trait $trait_ident {
             $(
                 fn $fn_ident<V>(mut $director_ident: crate::Director<'_, Self, V>, $node_ident: &$ty) 
@@ -55,6 +58,8 @@ macro_rules! skip {
 }
 
 node_set! {
+    /// A convenience trait for creating [syn] directors. Implementing this trait will also implement [crate::Direct] for
+    /// all 'feature = "full"' syn ast types. Each impl has a default corresponding to [syn]'s traversal behavior. 
     pub trait Full {
         visit_abi(director, node) -> syn::Abi {
             skip!(node.extern_token);

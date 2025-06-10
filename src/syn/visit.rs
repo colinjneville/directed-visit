@@ -1,5 +1,6 @@
 macro_rules! node_set {
-    ($vis:vis trait $trait_ident:ident { $($fn_ident:ident : $ty:ty),* $(,)? }) => {
+    ($(#[$attr:meta])* $vis:vis trait $trait_ident:ident { $($fn_ident:ident : $ty:ty),* $(,)? }) => {
+        $(#[$attr])*
         $vis trait $trait_ident {
             $(
                 fn $fn_ident<'n, D>(visitor: crate::Visitor<'_, 'n, D, Self, $ty>, _node: &'n $ty) 
@@ -25,6 +26,8 @@ macro_rules! node_set {
 }
 
 node_set! {
+    /// A convenience trait for creating [syn] visitors. Implementing this trait will also implement [crate::Visit] for
+    /// all 'feature = "full"' syn ast types. Like [syn::visit::Visit], each impl has a no-op default. 
     pub trait Full {
         visit_abi: syn::Abi, 
         visit_angle_bracketed_generic_arguments: syn::AngleBracketedGenericArguments,

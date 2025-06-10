@@ -1,12 +1,18 @@
 [package]
-name = "visitant"
+name = "directed-visit"
 version = "0.1.0"
 edition = "2024"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/colinjneville/directed-visit"
+readme = "README.md"
+description = "Visitor pattern with interchangable implementations for both the visit algorithm and node object traversal"
+keywords = ["visitor", "visitor_pattern", "syn"]
+categories = ["algorithms", "rust-patterns", "parsing"]
 
 [dependencies]
 proc-macro2 = { version = "1.0.95", optional = true }
 syn = { version = "2.0.101", features = ["full"], optional = true }
 
 [features]
-default = ["syn"]
+default = []
 syn = ["dep:syn", "dep:proc-macro2"]
