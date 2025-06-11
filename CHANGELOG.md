@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2025-06-11
+
+### Added
+
+- Generic scoping nodes (GenericsEnter, GenericsExit) to syn node set
+
+### Changed
+
+- syn::direct::Full now has the Visit parameter on the trait instead of each fn
+- syn::direct fns renamed to begin with direct_* instead of visit_*
+- syn::direct freestanding fns now take the Director by mut instead of by value
+
 ## [0.1.0] - 2025-06-10
 
 ### Added

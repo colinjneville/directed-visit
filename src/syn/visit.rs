@@ -3,6 +3,7 @@ macro_rules! node_set {
         $(#[$attr])*
         $vis trait $trait_ident {
             $(
+                #[doc = concat!("Visits [", stringify!($ty), "] nodes")]
                 fn $fn_ident<'n, D>(visitor: crate::Visitor<'_, 'n, D, Self, $ty>, _node: &'n $ty) 
                 where
                     D: crate::Direct<Self, $ty> + ?Sized,
@@ -217,5 +218,8 @@ node_set! {
         visit_visibility: syn::Visibility, 
         visit_where_clause: syn::WhereClause, 
         visit_where_predicate: syn::WherePredicate, 
+        // Added nodes
+        visit_generics_enter: crate::syn::GenericsEnter,
+        visit_generics_exit: crate::syn::GenericsExit,
     }
 }

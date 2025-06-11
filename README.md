@@ -20,7 +20,10 @@ fn my_visit(input: &MyTree) -> usize {
 ```
 
 ## syn
-The crate includes a low-pain replacement for `syn::visit::Visit` if the `syn` feature is enabled. Implement `directed_visit::syn::visit::Full` as you would `syn::visit::Visit`. For your director, `directed_visit::syn::direct::FullDefault` traverses as `syn::visit` does, or you can customize the behavior by implementing `directed_visit::syn::direct::Full`. The `derive` feature subset of `full` is not yet supported.
+The crate includes a replacement for `syn::visit::Visit` if the `syn` feature is enabled. Implement `directed_visit::syn::visit::Full` as you would `syn::visit::Visit`.  
+For your director, `directed_visit::syn::direct::FullDefault` traverses as `syn::visit` does, or you can customize the behavior by implementing `directed_visit::syn::direct::Full`.  
+In addition to the existing syn AST, two nodes have been added to the tree to represent when generic parameters become in and out of scope.  
+The `derive` feature subset of `full` is not yet supported.
 
 ## Limitations
 Because the director can dynamically create new nodes to visit, the visitor cannot hold references to the node graph (i.e. there is no single `'ast` lifetime for all nodes). For this reason there is also currently no `VisitMut` equivalent, because the ideal interaction between handling temporary dynamic nodes and mutating them is unclear.  
