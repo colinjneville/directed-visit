@@ -8,7 +8,7 @@ impl<'dv, D: ?Sized, V: ?Sized> Director<'dv, D, V> {
     pub(crate) fn new(data: DirectorVisitor<'dv, D, V>) -> Self {
         Self(data)
     }
-    
+
     /// Direct from this node to a sub-node with the [Visit] implementation.
     pub fn direct<NN: ?Sized>(this: &mut Self, node: &NN)
     where

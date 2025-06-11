@@ -8,10 +8,10 @@ impl<'dv, 'n, D: ?Sized, V: ?Sized, N: ?Sized> Visitor<'dv, 'n, D, V, N> {
     pub(crate) fn new(data: crate::DirectorVisitor<'dv, D, V>, node: &'n N) -> Self {
         Self(data, node)
     }
-    
+
     /// Complete visiting this node and return control to the [Direct] implementation.
-    pub fn visit(this: Self) 
-    where 
+    pub fn visit(this: Self)
+    where
         D: Direct<V, N>,
     {
         <D as Direct<V, N>>::direct(Director::new(this.0), this.1)
@@ -40,7 +40,7 @@ pub trait Visit<N: ?Sized> {
     /// `Visitor::visit(visitor)`, which returns control to the [Direct] implementation
     /// to continue to further sub-nodes. If you wish to skip sub-nodes, simply omit this
     /// call from your implementation.
-    fn visit<'n, D>(visitor: Visitor<'_, 'n, D, Self, N>, _node: &'n N) 
+    fn visit<'n, D>(visitor: Visitor<'_, 'n, D, Self, N>, _node: &'n N)
     where
         D: Direct<Self, N> + ?Sized,
     {

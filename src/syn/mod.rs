@@ -1,4 +1,3 @@
-
 /// syn directors
 pub mod direct;
 /// syn visitors
@@ -9,11 +8,11 @@ pub mod visit;
 pub struct GenericsEnter(syn::punctuated::Punctuated<syn::GenericParam, syn::Token![,]>);
 
 impl GenericsEnter {
-    pub(crate) fn new(params: &syn::punctuated::Punctuated<syn::GenericParam, syn::Token![,]>) -> &Self {
+    pub(crate) fn new(
+        params: &syn::punctuated::Punctuated<syn::GenericParam, syn::Token![,]>,
+    ) -> &Self {
         // Transmuting #[repr(transparent)] refs is safe
-        unsafe {
-            std::mem::transmute(params)
-        }
+        unsafe { std::mem::transmute(params) }
     }
 }
 
@@ -41,11 +40,11 @@ impl<'g> Iterator for GenericsEnterIter<'g> {
 pub struct GenericsExit(syn::punctuated::Punctuated<syn::GenericParam, syn::Token![,]>);
 
 impl GenericsExit {
-    pub(crate) fn new(params: &syn::punctuated::Punctuated<syn::GenericParam, syn::Token![,]>) -> &Self {
+    pub(crate) fn new(
+        params: &syn::punctuated::Punctuated<syn::GenericParam, syn::Token![,]>,
+    ) -> &Self {
         // Transmuting #[repr(transparent)] refs is safe
-        unsafe {
-            std::mem::transmute(params)
-        }
+        unsafe { std::mem::transmute(params) }
     }
 }
 
@@ -77,8 +76,12 @@ mod test {
     struct IdentCount(usize);
 
     impl crate::syn::visit::Full for IdentCount {
-        fn visit_ident<'dv, 'n, D: ?Sized>(mut visitor: crate::Visitor<'dv, 'n, D, Self, Ident>, _node: &'n Ident)
-        where D: crate::Direct<Self, Ident> {
+        fn visit_ident<'dv, 'n, D: ?Sized>(
+            mut visitor: crate::Visitor<'dv, 'n, D, Self, Ident>,
+            _node: &'n Ident,
+        ) where
+            D: crate::Direct<Self, Ident>,
+        {
             visitor.0 += 1;
             crate::Visitor::visit(visitor);
         }
@@ -96,11 +99,7 @@ mod test {
 
         let mut visit = IdentCount(0);
 
-        crate::visit(
-            &mut crate::syn::direct::FullDefault,
-            &mut visit,
-            &item
-        );
+        crate::visit(&mut crate::syn::direct::FullDefault, &mut visit, &item);
 
         assert_eq!(visit.0, 9);
     }
@@ -114,8 +113,12 @@ mod test {
         struct IdentList(Vec<Ident>);
 
         impl crate::syn::visit::Full for IdentList {
-            fn visit_ident<'dv, 'n, D: ?Sized>(mut visitor: crate::Visitor<'dv, 'n, D, Self, Ident>, node: &'n Ident)
-            where D: crate::Direct<Self, Ident> {
+            fn visit_ident<'dv, 'n, D: ?Sized>(
+                mut visitor: crate::Visitor<'dv, 'n, D, Self, Ident>,
+                node: &'n Ident,
+            ) where
+                D: crate::Direct<Self, Ident>,
+            {
                 visitor.0.push(node.clone());
                 crate::Visitor::visit(visitor);
             }
@@ -124,15 +127,19 @@ mod test {
         struct AttrIdentList;
 
         impl crate::syn::direct::Full<IdentList> for AttrIdentList {
-            fn direct_meta_list<'dv>(mut director: crate::Director<'dv, Self, IdentList>, node: &syn::MetaList) {
+            fn direct_meta_list<'dv>(
+                mut director: crate::Director<'dv, Self, IdentList>,
+                node: &syn::MetaList,
+            ) {
                 if node.path.is_ident("custom_attr") {
                     crate::Director::direct(&mut director, &node.path);
                     crate::Director::direct(&mut director, &node.delimiter);
 
-                    for ident in 
-                        node.parse_args_with(
-                            syn::punctuated::Punctuated::<Ident, syn::Token![,]>::parse_terminated
-                        ).unwrap() 
+                    for ident in node
+                        .parse_args_with(
+                            syn::punctuated::Punctuated::<Ident, syn::Token![,]>::parse_terminated,
+                        )
+                        .unwrap()
                     {
                         crate::Director::direct(&mut director, &ident);
                     }
@@ -144,13 +151,12 @@ mod test {
 
         let mut visit = IdentList(vec![]);
 
-        crate::visit(
-            &mut AttrIdentList,
-            &mut visit,
-            &attr
-        );
+        crate::visit(&mut AttrIdentList, &mut visit, &attr);
 
-        assert_eq!(visit.0, vec!["custom_attr", "these", "are", "actually", "idents"]);
+        assert_eq!(
+            visit.0,
+            vec!["custom_attr", "these", "are", "actually", "idents"]
+        );
     }
 
     #[test]
@@ -164,23 +170,29 @@ mod test {
         struct PrintVisit(Vec<String>);
 
         impl visit::Full for PrintVisit {
-            fn visit_ident<'n, D>(mut visitor: crate::Visitor<'_, 'n, D, Self, proc_macro2::Ident>, node: &'n proc_macro2::Ident) 
-            where 
-                D: crate::Direct<Self, proc_macro2::Ident> + ?Sized, 
+            fn visit_ident<'n, D>(
+                mut visitor: crate::Visitor<'_, 'n, D, Self, proc_macro2::Ident>,
+                node: &'n proc_macro2::Ident,
+            ) where
+                D: crate::Direct<Self, proc_macro2::Ident> + ?Sized,
             {
                 visitor.0.push(node.to_string());
             }
 
-            fn visit_generics_enter<'n, D>(mut visitor: crate::Visitor<'_, 'n, D, Self, crate::syn::GenericsEnter>, _node: &'n crate::syn::GenericsEnter) 
-            where 
-                D: crate::Direct<Self, crate::syn::GenericsEnter> + ?Sized, 
+            fn visit_generics_enter<'n, D>(
+                mut visitor: crate::Visitor<'_, 'n, D, Self, crate::syn::GenericsEnter>,
+                _node: &'n crate::syn::GenericsEnter,
+            ) where
+                D: crate::Direct<Self, crate::syn::GenericsEnter> + ?Sized,
             {
                 visitor.0.push("enter".to_string());
             }
 
-            fn visit_generics_exit<'n, D>(mut visitor: crate::Visitor<'_, 'n, D, Self, crate::syn::GenericsExit>, _node: &'n crate::syn::GenericsExit) 
-            where 
-                D: crate::Direct<Self, crate::syn::GenericsExit> + ?Sized, 
+            fn visit_generics_exit<'n, D>(
+                mut visitor: crate::Visitor<'_, 'n, D, Self, crate::syn::GenericsExit>,
+                _node: &'n crate::syn::GenericsExit,
+            ) where
+                D: crate::Direct<Self, crate::syn::GenericsExit> + ?Sized,
             {
                 visitor.0.push("exit".to_string());
             }
@@ -188,20 +200,11 @@ mod test {
 
         let mut visit = PrintVisit(vec![]);
 
-        crate::visit(
-            &mut crate::syn::direct::FullDefault,
-            &mut visit,
-            &item
-        );
+        crate::visit(&mut crate::syn::direct::FullDefault, &mut visit, &item);
 
-        assert_eq!(visit.0, [
-            "enter",
-            "MyStruct",
-            "T",
-            "my_field",
-            "Box",
-            "T",
-            "exit",
-        ]);
+        assert_eq!(
+            visit.0,
+            ["enter", "MyStruct", "T", "my_field", "Box", "T", "exit",]
+        );
     }
 }

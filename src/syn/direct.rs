@@ -2,8 +2,7 @@
 #[derive(Debug)]
 pub struct FullDefault;
 
-impl<V> Full<V> for FullDefault
-where V: crate::syn::visit::Full + ?Sized { }
+impl<V> Full<V> for FullDefault where V: crate::syn::visit::Full + ?Sized {}
 
 macro_rules! node_set {
     ($(#[$attr:meta])* $vis:vis trait $trait_ident:ident { $($fn_ident:ident($director_ident:ident, $node_ident:ident) -> $ty:ty $fn_impl:block)* }) => {
@@ -15,7 +14,7 @@ macro_rules! node_set {
         {
             $(
                 #[doc = concat!("Direct to sub-nodes of [", stringify!($ty), "]")]
-                fn $fn_ident(mut $director_ident: crate::Director<'_, Self, V>, $node_ident: &$ty) 
+                fn $fn_ident(mut $director_ident: crate::Director<'_, Self, V>, $node_ident: &$ty)
                 {
                     default::$fn_ident(&mut $director_ident, $node_ident);
                 }
@@ -23,7 +22,7 @@ macro_rules! node_set {
         }
 
         $(
-            impl<'n, V, T> crate::Direct<V, $ty> for T 
+            impl<'n, V, T> crate::Direct<V, $ty> for T
             where
                 V: crate::syn::visit::Full + ?Sized,
                 T: Full<V> + ?Sized,
@@ -38,7 +37,7 @@ macro_rules! node_set {
         pub mod default {
             $(
                 #[doc = concat!("Free-standing ", stringify!($ty), " direct impl")]
-                pub fn $fn_ident<D, V>($director_ident: &mut crate::Director<'_, D, V>, $node_ident: &$ty) 
+                pub fn $fn_ident<D, V>($director_ident: &mut crate::Director<'_, D, V>, $node_ident: &$ty)
                 where
                     D: super::$trait_ident<V> + ?Sized,
                     V: crate::syn::visit::Full + ?Sized,
@@ -64,7 +63,7 @@ macro_rules! skip {
 
 node_set! {
     /// A convenience trait for creating [syn] directors. Implementing this trait will also implement [crate::Direct] for
-    /// all 'feature = "full"' syn ast types. Each impl has a default corresponding to [syn]'s traversal behavior. 
+    /// all 'feature = "full"' syn ast types. Each impl has a default corresponding to [syn]'s traversal behavior.
     pub trait Full {
         direct_abi(director, node) -> syn::Abi {
             skip!(node.extern_token);
@@ -832,7 +831,7 @@ node_set! {
             crate::Director::direct(director, &node.ty);
         }
         direct_field_mutability(_director, _node) -> syn::FieldMutability {
-            
+
         }
         direct_field_pat(director, node) -> syn::FieldPat {
             for it in &node.attrs {
@@ -1072,7 +1071,7 @@ node_set! {
             super::exit_scope(director, &node.generics.params);
         }
         direct_impl_restriction(_director, _node) -> syn::ImplRestriction {
-            
+
         }
         direct_index(_director, node) -> syn::Index {
             skip!(node.index);
@@ -1404,25 +1403,25 @@ node_set! {
             skip!(node.span);
         }
         direct_lit_byte(_director, _node) -> syn::LitByte {
-        
+
         }
         direct_lit_byte_str(_director, _node) -> syn::LitByteStr {
-        
+
         }
         direct_lit_cstr(_director, _node) -> syn::LitCStr {
-        
+
         }
         direct_lit_char(_director, _node) -> syn::LitChar {
-        
+
         }
         direct_lit_float(_director, _node) -> syn::LitFloat {
-        
+
         }
         direct_lit_int(_director, _node) -> syn::LitInt {
-        
+
         }
         direct_lit_str(_director, _node) -> syn::LitStr {
-        
+
         }
         direct_local(director, node) -> syn::Local {
             for it in &node.attrs {
@@ -1828,7 +1827,7 @@ node_set! {
             skip!(node.semi_token);
         }
         direct_token_stream(_director, _node) -> proc_macro2::TokenStream {
-            
+
         }
         direct_trait_bound(director, node) -> syn::TraitBound {
             skip!(node.paren_token);
@@ -2213,20 +2212,24 @@ node_set! {
 }
 
 /// An extended director which includes nodes for entering and exiting
-/// [syn::Generics] scopes. Visitors must additionally implement 
+/// [syn::Generics] scopes. Visitors must additionally implement
 /// [Visit<EnterGenericScope>] and [Visit<ExitGenericScope>].
 pub struct FullGenericScope;
 
-fn enter_scope<D, V>(director: &mut crate::Director<'_, D, V>, generics: &syn::punctuated::Punctuated<syn::GenericParam, syn::Token![,]>) 
-where 
+fn enter_scope<D, V>(
+    director: &mut crate::Director<'_, D, V>,
+    generics: &syn::punctuated::Punctuated<syn::GenericParam, syn::Token![,]>,
+) where
     D: for<'g> crate::Direct<V, super::GenericsEnter> + ?Sized,
     V: for<'g> crate::Visit<super::GenericsEnter> + ?Sized,
 {
     crate::Director::direct(director, super::GenericsEnter::new(generics));
 }
 
-fn exit_scope<D, V>(director: &mut crate::Director<'_, D, V>, generics: &syn::punctuated::Punctuated<syn::GenericParam, syn::Token![,]>)
-where 
+fn exit_scope<D, V>(
+    director: &mut crate::Director<'_, D, V>,
+    generics: &syn::punctuated::Punctuated<syn::GenericParam, syn::Token![,]>,
+) where
     D: for<'g> crate::Direct<V, super::GenericsExit> + ?Sized,
     V: for<'g> crate::Visit<super::GenericsExit> + ?Sized,
 {
