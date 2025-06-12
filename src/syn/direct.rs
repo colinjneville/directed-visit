@@ -4,6 +4,8 @@ pub struct FullDefault;
 
 impl<V> Full<V> for FullDefault where V: crate::syn::visit::Full + ?Sized {}
 
+impl<V> FullMut<V> for FullDefault where V: crate::syn::visit::FullMut + ?Sized {}
+
 macro_rules! node_set {
     ($(#[$attr:meta])* $vis:vis trait $trait_ident:ident { $($fn_ident:ident($director_ident:ident, $node_ident:ident) -> $ty:ty $fn_impl:block)* }) => {
         #[allow(unused_mut)]
@@ -4405,11 +4407,6 @@ node_set_mut! {
         }
     }
 }
-
-/// An extended director which includes nodes for entering and exiting
-/// [syn::Generics] scopes. Visitors must additionally implement
-/// [Visit<EnterGenericScope>] and [Visit<ExitGenericScope>].
-pub struct FullGenericScope;
 
 fn enter_scope<D, V>(
     director: &mut crate::Director<'_, D, V>,
