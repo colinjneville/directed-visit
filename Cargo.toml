@@ -1,6 +1,6 @@
 [package]
 name = "directed-visit"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/colinjneville/directed-visit"
@@ -12,6 +12,9 @@ categories = ["algorithms", "rust-patterns", "parsing"]
 [dependencies]
 proc-macro2 = { version = "1.0.95", optional = true }
 syn = { version = "2.0.101", features = ["full"], optional = true }
+
+[dev-dependencies]
+quote = "1.0.40"
 
 [features]
 default = []

@@ -14,6 +14,13 @@ impl GenericsEnter {
         // Transmuting #[repr(transparent)] refs is safe
         unsafe { std::mem::transmute(params) }
     }
+
+    pub(crate) fn new_mut(
+        params: &mut syn::punctuated::Punctuated<syn::GenericParam, syn::Token![,]>,
+    ) -> &mut Self {
+        // Transmuting #[repr(transparent)] refs is safe
+        unsafe { std::mem::transmute(params) }
+    }
 }
 
 impl<'g> IntoIterator for &'g GenericsEnter {
@@ -43,6 +50,13 @@ impl GenericsExit {
     pub(crate) fn new(
         params: &syn::punctuated::Punctuated<syn::GenericParam, syn::Token![,]>,
     ) -> &Self {
+        // Transmuting #[repr(transparent)] refs is safe
+        unsafe { std::mem::transmute(params) }
+    }
+
+    pub(crate) fn new_mut(
+        params: &mut syn::punctuated::Punctuated<syn::GenericParam, syn::Token![,]>,
+    ) -> &mut Self {
         // Transmuting #[repr(transparent)] refs is safe
         unsafe { std::mem::transmute(params) }
     }
@@ -76,14 +90,12 @@ mod test {
     struct IdentCount(usize);
 
     impl crate::syn::visit::Full for IdentCount {
-        fn visit_ident<'dv, 'n, D: ?Sized>(
-            mut visitor: crate::Visitor<'dv, 'n, D, Self, Ident>,
-            _node: &'n Ident,
-        ) where
+        fn visit_ident<'dv, D: ?Sized>(mut visitor: crate::Visitor<'dv, D, Self>, node: &Ident)
+        where
             D: crate::Direct<Self, Ident>,
         {
             visitor.0 += 1;
-            crate::Visitor::visit(visitor);
+            crate::Visitor::visit(visitor, node);
         }
     }
 
@@ -113,14 +125,12 @@ mod test {
         struct IdentList(Vec<Ident>);
 
         impl crate::syn::visit::Full for IdentList {
-            fn visit_ident<'dv, 'n, D: ?Sized>(
-                mut visitor: crate::Visitor<'dv, 'n, D, Self, Ident>,
-                node: &'n Ident,
-            ) where
+            fn visit_ident<'dv, D: ?Sized>(mut visitor: crate::Visitor<'dv, D, Self>, node: &Ident)
+            where
                 D: crate::Direct<Self, Ident>,
             {
                 visitor.0.push(node.clone());
-                crate::Visitor::visit(visitor);
+                crate::Visitor::visit(visitor, node);
             }
         }
 
@@ -160,6 +170,63 @@ mod test {
     }
 
     #[test]
+    fn custom_direct_mut() {
+        let mut attr: syn::Attribute = syn::parse_quote! {
+            #[custom_attr(these, are, actually, idents)]
+        };
+
+        struct ReverseIdentVisitor;
+
+        impl crate::syn::visit::FullMut for ReverseIdentVisitor {
+            fn visit_ident_mut<'dv, D: ?Sized>(
+                visitor: crate::Visitor<'dv, D, Self>,
+                node: &mut Ident,
+            ) where
+                D: crate::DirectMut<Self, Ident>,
+            {
+                let rev_str = node.to_string().chars().rev().collect::<String>();
+                *node = proc_macro2::Ident::new(rev_str.as_str(), node.span());
+                crate::Visitor::visit_mut(visitor, node);
+            }
+        }
+
+        struct AttrIdentList;
+
+        impl crate::syn::direct::FullMut<ReverseIdentVisitor> for AttrIdentList {
+            fn direct_meta_list_mut<'dv>(
+                mut director: crate::Director<'dv, Self, ReverseIdentVisitor>,
+                node: &mut syn::MetaList,
+            ) {
+                if node.path.is_ident("custom_attr") {
+                    crate::Director::direct_mut(&mut director, &mut node.path);
+                    crate::Director::direct_mut(&mut director, &mut node.delimiter);
+
+                    let mut ident_list = node
+                        .parse_args_with(
+                            syn::punctuated::Punctuated::<Ident, syn::Token![,]>::parse_terminated,
+                        )
+                        .unwrap();
+                    for ident in &mut ident_list {
+                        crate::Director::direct_mut(&mut director, ident);
+                    }
+                    // Dynamically created nodes must be written back to their source
+                    node.tokens = ident_list.to_token_stream();
+                } else {
+                    super::direct::default_mut::direct_meta_list_mut(&mut director, node);
+                }
+            }
+        }
+
+        crate::visit_mut(&mut AttrIdentList, &mut ReverseIdentVisitor, &mut attr);
+
+        use quote::ToTokens as _;
+        assert_eq!(
+            attr.to_token_stream().to_string(),
+            quote::quote!( #[rtta_motsuc(eseht, era, yllautca, stnedi)] ).to_string()
+        );
+    }
+
+    #[test]
     fn generic_scopes() {
         let item: syn::Item = syn::parse_quote! {
             struct MyStruct<T> {
@@ -170,27 +237,25 @@ mod test {
         struct PrintVisit(Vec<String>);
 
         impl visit::Full for PrintVisit {
-            fn visit_ident<'n, D>(
-                mut visitor: crate::Visitor<'_, 'n, D, Self, proc_macro2::Ident>,
-                node: &'n proc_macro2::Ident,
-            ) where
+            fn visit_ident<D>(mut visitor: crate::Visitor<'_, D, Self>, node: &proc_macro2::Ident)
+            where
                 D: crate::Direct<Self, proc_macro2::Ident> + ?Sized,
             {
                 visitor.0.push(node.to_string());
             }
 
-            fn visit_generics_enter<'n, D>(
-                mut visitor: crate::Visitor<'_, 'n, D, Self, crate::syn::GenericsEnter>,
-                _node: &'n crate::syn::GenericsEnter,
+            fn visit_generics_enter<D>(
+                mut visitor: crate::Visitor<'_, D, Self>,
+                _node: &crate::syn::GenericsEnter,
             ) where
                 D: crate::Direct<Self, crate::syn::GenericsEnter> + ?Sized,
             {
                 visitor.0.push("enter".to_string());
             }
 
-            fn visit_generics_exit<'n, D>(
-                mut visitor: crate::Visitor<'_, 'n, D, Self, crate::syn::GenericsExit>,
-                _node: &'n crate::syn::GenericsExit,
+            fn visit_generics_exit<D>(
+                mut visitor: crate::Visitor<'_, D, Self>,
+                _node: &crate::syn::GenericsExit,
             ) where
                 D: crate::Direct<Self, crate::syn::GenericsExit> + ?Sized,
             {

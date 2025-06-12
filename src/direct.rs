@@ -1,4 +1,4 @@
-use crate::{DirectorVisitor, Visit, Visitor};
+use crate::{DirectorVisitor, Visit, VisitMut, Visitor};
 
 /// A wrapper for a [Direct] implementation.
 #[derive(Debug)]
@@ -15,7 +15,16 @@ impl<'dv, D: ?Sized, V: ?Sized> Director<'dv, D, V> {
         D: Direct<V, NN>,
         V: Visit<NN>,
     {
-        <V as Visit<NN>>::visit(Visitor::new(this.0.reborrow(), node), node)
+        <V as Visit<NN>>::visit(Visitor::new(this.0.reborrow()), node)
+    }
+
+    /// Direct from this node to a sub-node with the [VisitMut] implementation.
+    pub fn direct_mut<NN: ?Sized>(this: &mut Self, node: &mut NN)
+    where
+        D: DirectMut<V, NN>,
+        V: VisitMut<NN>,
+    {
+        <V as VisitMut<NN>>::visit_mut(Visitor::new(this.0.reborrow()), node)
     }
 }
 
@@ -39,4 +48,12 @@ pub trait Direct<V: ?Sized, N: ?Sized> {
     /// Determines all the sub-nodes of the given node. For each sub-node, call
     /// `Director::direct(&mut director, &node.my_subnode)`.
     fn direct(director: Director<'_, Self, V>, node: &N);
+}
+
+/// Determines how to traverse the nodes within the input. This must be implemented for
+/// all node types in the input.
+pub trait DirectMut<V: ?Sized, N: ?Sized> {
+    /// Determines all the sub-nodes of the given node. For each sub-node, call
+    /// `Director::direct_mut(&mut director, &mut node.my_subnode)`.
+    fn direct_mut(director: Director<'_, Self, V>, node: &mut N);
 }
