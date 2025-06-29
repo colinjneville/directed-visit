@@ -961,12 +961,14 @@ node_set! {
             }
         }
         direct_foreign_item_fn(director, node) -> syn::ForeignItemFn {
+            super::enter_scope(director, &node.sig.generics.params);
             for it in &node.attrs {
                 crate::Director::direct(director, it);
             }
             crate::Director::direct(director, &node.vis);
             crate::Director::direct(director, &node.sig);
             skip!(node.semi_token);
+            super::exit_scope(director, &node.sig.generics.params);
         }
         direct_foreign_item_macro(director, node) -> syn::ForeignItemMacro {
             for it in &node.attrs {
@@ -1087,6 +1089,7 @@ node_set! {
             super::exit_scope(director, &node.generics.params);
         }
         direct_impl_item_fn(director, node) -> syn::ImplItemFn {
+            super::enter_scope(director, &node.sig.generics.params);
             for it in &node.attrs {
                 crate::Director::direct(director, it);
             }
@@ -1094,6 +1097,7 @@ node_set! {
             skip!(node.defaultness);
             crate::Director::direct(director, &node.sig);
             crate::Director::direct(director, &node.block);
+            super::exit_scope(director, &node.sig.generics.params);
         }
         direct_impl_item_macro(director, node) -> syn::ImplItemMacro {
             for it in &node.attrs {
@@ -1224,12 +1228,14 @@ node_set! {
             skip!(node.semi_token);
         }
         direct_item_fn(director, node) -> syn::ItemFn {
+            super::enter_scope(director, &node.sig.generics.params);
             for it in &node.attrs {
                 crate::Director::direct(director, it);
             }
             crate::Director::direct(director, &node.vis);
             crate::Director::direct(director, &node.sig);
             crate::Director::direct(director, &*node.block);
+            super::exit_scope(director, &node.sig.generics.params);
         }
         direct_item_foreign_mod(director, node) -> syn::ItemForeignMod {
             for it in &node.attrs {
@@ -1819,7 +1825,6 @@ node_set! {
             }
         }
         direct_signature(director, node) -> syn::Signature {
-            super::enter_scope(director, &node.generics.params);
             skip!(node.constness);
             skip!(node.asyncness);
             skip!(node.unsafety);
@@ -1838,7 +1843,6 @@ node_set! {
                 crate::Director::direct(director, it);
             }
             crate::Director::direct(director, &node.output);
-            super::exit_scope(director, &node.generics.params);
         }
         direct_static_mutability(_director, node) -> syn::StaticMutability {
             match node {
@@ -1930,6 +1934,7 @@ node_set! {
             super::exit_scope(director, &node.generics.params);
         }
         direct_trait_item_fn(director, node) -> syn::TraitItemFn {
+            super::enter_scope(director, &node.sig.generics.params);
             for it in &node.attrs {
                 crate::Director::direct(director, it);
             }
@@ -1938,6 +1943,7 @@ node_set! {
                 crate::Director::direct(director, it);
             }
             skip!(node.semi_token);
+            super::exit_scope(director, &node.sig.generics.params);
         }
         direct_trait_item_macro(director, node) -> syn::TraitItemMacro {
             for it in &node.attrs {
@@ -3111,12 +3117,14 @@ node_set_mut! {
             }
         }
         direct_foreign_item_fn_mut(director, node) -> syn::ForeignItemFn {
+            super::enter_scope_mut(director, &mut node.sig.generics.params);
             for it in &mut node.attrs {
                 crate::Director::direct_mut(director, it);
             }
             crate::Director::direct_mut(director, &mut node.vis);
             crate::Director::direct_mut(director, &mut node.sig);
             skip!(node.semi_token);
+            super::exit_scope_mut(director, &mut node.sig.generics.params);
         }
         direct_foreign_item_macro_mut(director, node) -> syn::ForeignItemMacro {
             for it in &mut node.attrs {
@@ -3237,6 +3245,7 @@ node_set_mut! {
             super::exit_scope_mut(director, &mut node.generics.params);
         }
         direct_impl_item_fn_mut(director, node) -> syn::ImplItemFn {
+            super::enter_scope_mut(director, &mut node.sig.generics.params);
             for it in &mut node.attrs {
                 crate::Director::direct_mut(director, it);
             }
@@ -3244,6 +3253,7 @@ node_set_mut! {
             skip!(node.defaultness);
             crate::Director::direct_mut(director, &mut node.sig);
             crate::Director::direct_mut(director, &mut node.block);
+            super::exit_scope_mut(director, &mut node.sig.generics.params);
         }
         direct_impl_item_macro_mut(director, node) -> syn::ImplItemMacro {
             for it in &mut node.attrs {
@@ -3374,12 +3384,14 @@ node_set_mut! {
             skip!(node.semi_token);
         }
         direct_item_fn_mut(director, node) -> syn::ItemFn {
+            super::enter_scope_mut(director, &mut node.sig.generics.params);
             for it in &mut node.attrs {
                 crate::Director::direct_mut(director, it);
             }
             crate::Director::direct_mut(director, &mut node.vis);
             crate::Director::direct_mut(director, &mut node.sig);
             crate::Director::direct_mut(director, &mut *node.block);
+            super::exit_scope_mut(director, &mut node.sig.generics.params);
         }
         direct_item_foreign_mod_mut(director, node) -> syn::ItemForeignMod {
             for it in &mut node.attrs {
@@ -4080,6 +4092,7 @@ node_set_mut! {
             super::exit_scope_mut(director, &mut node.generics.params);
         }
         direct_trait_item_fn_mut(director, node) -> syn::TraitItemFn {
+            super::enter_scope_mut(director, &mut node.sig.generics.params);
             for it in &mut node.attrs {
                 crate::Director::direct_mut(director, it);
             }
@@ -4088,6 +4101,7 @@ node_set_mut! {
                 crate::Director::direct_mut(director, it);
             }
             skip!(node.semi_token);
+            super::exit_scope_mut(director, &mut node.sig.generics.params);
         }
         direct_trait_item_macro_mut(director, node) -> syn::TraitItemMacro {
             for it in &mut node.attrs {

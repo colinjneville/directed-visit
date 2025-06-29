@@ -86,6 +86,7 @@ impl<'g> Iterator for GenericsExitIter<'g> {
 mod test {
     use super::*;
     use proc_macro2::Ident;
+    use quote::ToTokens;
 
     struct IdentCount(usize);
 
@@ -270,6 +271,59 @@ mod test {
         assert_eq!(
             visit.0,
             ["enter", "MyStruct", "T", "my_field", "Box", "T", "exit",]
+        );
+    }
+
+    #[test]
+    fn nested_scopes() {
+        let item: syn::Item = syn::parse_quote! {
+            impl<'a, T> &'a MyStruct<T> {
+                fn do_it<'b, U>() { }
+            }
+        };
+
+        struct ScopesVisit(Vec<String>);
+
+        impl visit::Full for ScopesVisit {
+            fn visit_generics_enter<D>(
+                mut visitor: crate::Visitor<'_, D, Self>,
+                node: &crate::syn::GenericsEnter,
+            ) where
+                D: crate::Direct<Self, crate::syn::GenericsEnter> + ?Sized,
+            {
+                visitor.0.push("<".to_string());
+                for param in &node.0 {
+                    visitor.0.push(param.to_token_stream().to_string());
+                }
+                visitor.0.push(">".to_string());
+            }
+
+            fn visit_generics_exit<D>(
+                mut visitor: crate::Visitor<'_, D, Self>,
+                node: &crate::syn::GenericsExit,
+            ) where
+                D: crate::Direct<Self, crate::syn::GenericsExit> + ?Sized,
+            {
+                visitor.0.push("</".to_string());
+                for param in &node.0 {
+                    visitor.0.push(param.to_token_stream().to_string());
+                }
+                visitor.0.push(">".to_string());
+            }
+        }
+
+        let mut visit = ScopesVisit(vec![]);
+
+        crate::visit(&mut crate::syn::direct::FullDefault, &mut visit, &item);
+
+        assert_eq!(
+            visit.0,
+            [
+                "<", "'a", "T", ">", 
+                "<", "'b", "U", ">", 
+                "</", "'b", "U", ">", 
+                "</", "'a", "T", ">", 
+            ]
         );
     }
 }
