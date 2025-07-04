@@ -291,11 +291,12 @@ mod test {
             ) where
                 D: crate::Direct<Self, crate::syn::GenericsEnter> + ?Sized,
             {
-                visitor.0.push("<".to_string());
+                let mut s = "<".to_string();
                 for param in &node.0 {
-                    visitor.0.push(param.to_token_stream().to_string());
+                    s.push_str(&format!("{}, ", param.to_token_stream()));
                 }
-                visitor.0.push(">".to_string());
+                s.push('>');
+                visitor.0.push(s);
             }
 
             fn visit_generics_exit<D>(
@@ -304,11 +305,12 @@ mod test {
             ) where
                 D: crate::Direct<Self, crate::syn::GenericsExit> + ?Sized,
             {
-                visitor.0.push("</".to_string());
+                let mut s = "</".to_string();
                 for param in &node.0 {
-                    visitor.0.push(param.to_token_stream().to_string());
+                    s.push_str(&format!("{}, ", param.to_token_stream()));
                 }
-                visitor.0.push(">".to_string());
+                s.push('>');
+                visitor.0.push(s);
             }
         }
 
@@ -318,12 +320,7 @@ mod test {
 
         assert_eq!(
             visit.0,
-            [
-                "<", "'a", "T", ">", 
-                "<", "'b", "U", ">", 
-                "</", "'b", "U", ">", 
-                "</", "'a", "T", ">", 
-            ]
+            ["<'a, T, >", "<'b, U, >", "</'b, U, >", "</'a, T, >",]
         );
     }
 }
